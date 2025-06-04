@@ -1,59 +1,57 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { RecordingProvider } from './context/RecordingContext';
-import Layout from './components/Layout/Layout';
-import HomePage from './pages/HomePage';
-import RecordingsPage from './pages/RecordingsPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import AdminPanel from './pages/AdminPanel';
-import CreateRecording from './pages/CreateRecording';
-import EditRecording from './pages/EditRecording';
-import ProtectedRoute from './components/ProtectedRoute';
+import Header from './components/Layout/Header';
+import Footer from './components/Layout/Footer';
+import ProtectedRoute from './components/Auth/ProtectedRoute';
+
+// Pages
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Recordings from './pages/Recordings';
+import Categories from './pages/Categories';
+import Upload from './pages/Upload';
+import About from './pages/About';
+import Contact from './pages/Contact';
+
+// CSS
 import './App.css';
 
 function App() {
   return (
     <AuthProvider>
-      <RecordingProvider>
-        <Router>
-          <div className="App">
-            <Layout>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/recordings" element={<RecordingsPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route 
-                  path="/admin" 
-                  element={
-                    <ProtectedRoute adminOnly>
-                      <AdminPanel />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/create-recording" 
-                  element={
-                    <ProtectedRoute adminOnly>
-                      <CreateRecording />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/edit-recording/:id" 
-                  element={
-                    <ProtectedRoute adminOnly>
-                      <EditRecording />
-                    </ProtectedRoute>
-                  } 
-                />
-              </Routes>
-            </Layout>
-          </div>
-        </Router>
-      </RecordingProvider>
+      <Router>
+        <div className="App min-h-screen bg-gradient-to-br from-navy-950 via-navy-900 to-navy-950">
+          <Header />
+          <main className="flex-grow">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/recordings" element={<Recordings />} />
+              <Route path="/categories" element={<Categories />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              
+              {/* Protected Routes */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/upload" element={
+                <ProtectedRoute>
+                  <Upload />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </Router>
     </AuthProvider>
   );
 }

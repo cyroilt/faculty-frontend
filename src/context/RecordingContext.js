@@ -5,20 +5,7 @@ const RecordingContext = createContext();
 
 const initialState = {
   recordings: [],
-  categories: [
-    'Учебная деятельность',
-    'Научная деятельность',
-    'Служебная деятельность',
-    'Работа с личным составом',
-    'Спортивная деятельность'
-  ],
-  tags: [
-    'Учебная деятельность',
-    'Научная деятельность',
-    'Служебная деятельность',
-    'Работа с личным составом',
-    'Спортивная деятельность'
-  ],
+  categories: ['Научная деятельность', 'Спорт', 'Культура', 'Образование', 'Конференции', 'Достижения'],
   loading: false,
   error: null
 };
@@ -26,11 +13,21 @@ const initialState = {
 const recordingReducer = (state, action) => {
   switch (action.type) {
     case 'SET_LOADING':
-      return { ...state, loading: action.payload };
+      return {
+        ...state,
+        loading: action.payload
+      };
     case 'SET_RECORDINGS':
-      return { ...state, recordings: action.payload, loading: false };
+      return {
+        ...state,
+        recordings: action.payload,
+        loading: false
+      };
     case 'ADD_RECORDING':
-      return { ...state, recordings: [action.payload, ...state.recordings] };
+      return {
+        ...state,
+        recordings: [action.payload, ...state.recordings]
+      };
     case 'UPDATE_RECORDING':
       return {
         ...state,
@@ -43,10 +40,12 @@ const recordingReducer = (state, action) => {
         ...state,
         recordings: state.recordings.filter(recording => recording._id !== action.payload)
       };
-    case 'ADD_CATEGORY':
-      return { ...state, categories: [...state.categories, action.payload] };
     case 'SET_ERROR':
-      return { ...state, error: action.payload, loading: false };
+      return {
+        ...state,
+        error: action.payload,
+        loading: false
+      };
     default:
       return state;
   }
@@ -55,9 +54,10 @@ const recordingReducer = (state, action) => {
 export const RecordingProvider = ({ children }) => {
   const [state, dispatch] = useReducer(recordingReducer, initialState);
 
+  // Fetch all recordings
   const fetchRecordings = async () => {
-    dispatch({ type: 'SET_LOADING', payload: true });
     try {
+      dispatch({ type: 'SET_LOADING', payload: true });
       const res = await axios.get('/api/recordings');
       dispatch({ type: 'SET_RECORDINGS', payload: res.data });
     } catch (error) {
@@ -65,6 +65,7 @@ export const RecordingProvider = ({ children }) => {
     }
   };
 
+  // Create recording
   const createRecording = async (recordingData) => {
     try {
       const res = await axios.post('/api/recordings', recordingData);
@@ -75,6 +76,7 @@ export const RecordingProvider = ({ children }) => {
     }
   };
 
+  // Update recording
   const updateRecording = async (id, recordingData) => {
     try {
       const res = await axios.put(`/api/recordings/${id}`, recordingData);
@@ -85,6 +87,7 @@ export const RecordingProvider = ({ children }) => {
     }
   };
 
+  // Delete recording
   const deleteRecording = async (id) => {
     try {
       await axios.delete(`/api/recordings/${id}`);
@@ -93,10 +96,6 @@ export const RecordingProvider = ({ children }) => {
     } catch (error) {
       return { success: false, error: error.response?.data?.message || 'Failed to delete recording' };
     }
-  };
-
-  const addCategory = (category) => {
-    dispatch({ type: 'ADD_CATEGORY', payload: category });
   };
 
   useEffect(() => {
@@ -110,8 +109,7 @@ export const RecordingProvider = ({ children }) => {
         fetchRecordings,
         createRecording,
         updateRecording,
-        deleteRecording,
-        addCategory
+        deleteRecording
       }}
     >
       {children}

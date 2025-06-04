@@ -1,172 +1,65 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useAuth } from '../../context/AuthContext';
-import { recordingAPI } from '../../services/api';
-import {
-  HeartIcon,
-  EyeIcon,
-  CalendarIcon,
-  UserIcon,
-  TagIcon,
-} from '@heroicons/react/24/outline';
-import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import { formatDate, formatFileSize, getFileTypeIcon, truncateText } from '../../utils/helpers';
 
-const RecordingCard = ({ recording, onUpdate }) => {
-  const { user, isAuthenticated } = useAuth();
-  const [isLiked, setIsLiked] = useState(
-    recording.likes?.includes(user?._id) || false
-  );
-  const [likesCount, setLikesCount] = useState(recording.likes?.length || 0);
-  const [isLiking, setIsLiking] = useState(false);
-
-  const handleLike = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!isAuthenticated || isLiking) return;
-    
-    setIsLiking(true);
-    try {
-      const response = await recordingAPI.like(recording._id);
-      setIsLiked(response.data.isLiked);
-      setLikesCount(response.data.likes);
-      if (onUpdate) onUpdate();
-    } catch (error) {
-      console.error('Error liking recording:', error);
-    } finally {
-      setIsLiking(false);
-    }
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  const truncateText = (text, maxLength = 150) => {
-    if (text.length <= maxLength) return text;
-    return text.substr(0, maxLength) + '...';
-  };
-
+const RecordingCard = ({ recording, showStatus = false }) => {
   return (
-    <motion.div
-      whileHover={{ y: -5 }}
-      transition={{ duration: 0.3 }}
-      className="card group h-full flex flex-col"
-    >
-      <Link to={`/recordings/${recording._id}`} className="flex-1 flex flex-col">
-        {/* Image/Video Preview */}
-        {recording.images?.length > 0 && (
-          <div className="relative h-48 mb-4 rounded-lg overflow-hidden">
-            <img
-              src={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${recording.images[0].url}`}
-              alt={recording.title}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            
-            {/* Category Badge */}
-            {recording.category && (
-              <div 
-                className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium text-white"
-                style={{ backgroundColor: recording.category.color || '#1e3a8a' }}
-              >
-                {recording.category.name}
-              </div>
-            )}
-            
-            {/* Featured Badge */}
-            {recording.isFeatured && (
-              <div className="absolute top-3 right-3 bg-gold-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                Рекомендуемое
-              </div>
-            )}
+    <div className="bg-navy-800 rounded-xl border border-navy-600 overflow-hidden hover:border-gold-500/50 transition-all duration-300 group">
+      {/* Thumbnail */}
+      <div className="relative h-48 bg-navy-700 flex items-center justify-center">
+        <span className="text-4xl">
+          {getFileTypeIcon(recording.mimeType)}
+        </span>
+        
+        {/* Status Badge */}
+        {showStatus && (
+          <div className="absolute top-2 right-2">
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              recording.isApproved 
+                ? 'bg-green-500/20 text-green-400' 
+                : 'bg-yellow-500/20 text-yellow-400'
+            }`}>
+              {recording.isApproved ? 'Одобрено' : 'На модерации'}
+            </span>
           </div>
         )}
+      </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col">
-          <h3 className="text-xl font-bold text-white mb-3 group-hover:text-gold-400 transition-colors duration-200">
-            {recording.title}
-          </h3>
-          
-          <p className="text-white/70 mb-4 flex-1 leading-relaxed">
-            {truncateText(recording.content)}
+      {/* Content */}
+      <div className="p-4">
+        <h3 className="text-white font-semibold mb-2 group-hover:text-gold-400 transition-colors">
+          <Link to={`/recordings/${recording.id}`}>
+            {truncateText(recording.title, 60)}
+          </Link>
+        </h3>
+        
+        {recording.description && (
+          <p className="text-gray-400 text-sm mb-3">
+            {truncateText(recording.description, 100)}
           </p>
+        )}
 
-          {/* Tags */}
-          {recording.tags?.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {recording.tags.slice(0, 3).map((tag, index) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center px-2 py-1 bg-white/10 text-white/80 text-xs rounded-full"
-                >
-                  <TagIcon className="h-3 w-3 mr-1" />
-                  {tag}
-                </span>
-              ))}
-              {recording.tags.length > 3 && (
-                <span className="text-white/60 text-xs">
-                  +{recording.tags.length - 3} еще
-                </span>
-              )}
-            </div>
+        {/* Meta Info */}
+        <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+          <span>{formatDate(recording.createdAt)}</span>
+          <span>{formatFileSize(recording.fileSize)}</span>
+        </div>
+
+        {/* Category & Stats */}
+        <div className="flex items-center justify-between">
+          {recording.category && (
+            <span className="px-2 py-1 bg-navy-700 text-gray-300 rounded text-xs">
+              {recording.category.nameRu}
+            </span>
           )}
-
-          {/* Meta Information */}
-          <div className="space-y-2 text-sm text-white/60">
-            {recording.author && (
-              <div className="flex items-center">
-                <UserIcon className="h-4 w-4 mr-2" />
-                <span>{recording.author.firstName} {recording.author.lastName}</span>
-              </div>
-            )}
-            
-            <div className="flex items-center">
-              <CalendarIcon className="h-4 w-4 mr-2" />
-              <span>{formatDate(recording.createdAt)}</span>
-            </div>
-            
-            <div className="flex items-center">
-              <EyeIcon className="h-4 w-4 mr-2" />
-              <span>{recording.views || 0} просмотров</span>
-            </div>
+          
+          <div className="flex items-center space-x-3 text-xs text-gray-400">
+            <span>👁️ {recording.viewsCount || 0}</span>
+            <span>❤️ {recording.likesCount || 0}</span>
           </div>
         </div>
-      </Link>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between pt-4 mt-4 border-t border-white/10">
-        <button
-          onClick={handleLike}
-          disabled={!isAuthenticated || isLiking}
-          className={`flex items-center space-x-2 transition-colors duration-200 ${
-            isLiked 
-              ? 'text-red-400 hover:text-red-300' 
-              : 'text-white/60 hover:text-red-400'
-          } ${!isAuthenticated ? 'cursor-not-allowed opacity-50' : ''}`}
-        >
-          {isLiked ? (
-            <HeartSolidIcon className="h-5 w-5" />
-          ) : (
-            <HeartIcon className="h-5 w-5" />
-          )}
-          <span className="text-sm">{likesCount}</span>
-        </button>
-
-        <Link
-          to={`/recordings/${recording._id}`}
-          className="text-gold-400 hover:text-gold-300 text-sm font-medium transition-colors duration-200"
-        >
-          Читать далее →
-        </Link>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
